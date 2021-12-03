@@ -11,7 +11,7 @@ java -jar target/code-analyzer-<VERSION>.jar -s (--source-folder) SOURCE_FOLDER 
  -t (--table-name) TABLE_NAME        : table name which is manipulated
 ```
 
-#Example
+# Example
 
 Execute this from this project's root directory
 
