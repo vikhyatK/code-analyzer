@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -15,8 +14,6 @@ import com.citi.code_analyzer.service.MethodService;
 import spoon.Launcher;
 
 public class ShowMethodCallHierarchy {
-	
-	private static final String SRC = "\\src\\main\\java";
 	
 	@Option(name = "-s", aliases = "--source-folder", metaVar = "SOURCE_FOLDER",
 			usage = "source folder for the analyzed project",
@@ -52,21 +49,19 @@ public class ShowMethodCallHierarchy {
     
     public void doMain() {
     	Launcher launcher = new Launcher();
-    	if(StringUtils.isBlank(sourceFolder) && !sourceFolder.contains(SRC)) {
-    		sourceFolder = sourceFolder + SRC;
-    	}
     	File file = new File(sourceFolder);
     	if(file.exists() && file.isDirectory()) {
     		launcher.addInputResource(sourceFolder);
+    		launcher.getEnvironment().setComplianceLevel(14);
             launcher.buildModel();
-            parse(launcher);	
+            parse(launcher);
     	} else {
     		System.err.println("The source folder path is not correct");
     	}
     }
 
 	private void parse(Launcher launcher) {
-    	Map<String, List<String>> classToMethodNameMap = MethodService.findManipulatingMethodsOfTable(tableName);
-    	MethodService.getStack(launcher, classToMethodNameMap);
+    	Map<String, List<String>> classToMethodNameMap = MethodService.findMethodsManipulatingTable(tableName);
+    	MethodService.getHierarchy(launcher, classToMethodNameMap);
 	}
 }
