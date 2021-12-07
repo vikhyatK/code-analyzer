@@ -51,7 +51,7 @@ public class ShowMethodCallHierarchy {
     public void doMain() {
     	Launcher launcher = new Launcher();
 //    	sourceFolder = "F:\\Java_stuff\\Freelancing\\ApneSaathi\\ApneSaathiBackend\\developer-parvathy\\VolunteerApp\\src\\main\\java";
-    	sourceFolder = "C:\\Users\\Vikhyat\\Documents\\workspace-spring-tool-suite-4-4.8.0.RELEASE\\Test\\src";
+//    	sourceFolder = "C:\\Users\\Vikhyat\\Documents\\workspace-spring-tool-suite-4-4.8.0.RELEASE\\Test\\src";
     	File file = new File(sourceFolder);
     	if(file.exists() && file.isDirectory()) {
     		launcher.addInputResource(sourceFolder);

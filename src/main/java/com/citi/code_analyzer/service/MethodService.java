@@ -2,8 +2,10 @@ package com.citi.code_analyzer.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -55,24 +57,18 @@ public class MethodService {
 				String methodName = method.getSimpleName();
 				List<CtMethod<?>> methodsByNameList = aInterface.getMethodsByName(methodName);
 				if (CollectionUtils.isEmpty(methodsByNameList)) {
-					methodsByNameList = aInterface.getAllMethods().stream().filter(m -> {
-//						System.out.println(m.getSimpleName()); // TODO: for repo.save()
-						return m.getSimpleName().equals(methodName);
-					}).collect(Collectors.toList());
+					Set<CtMethod<?>> allMethods = aInterface.getAllMethods();
+					for(CtMethod<?> m : allMethods) {
+						if (m.getSimpleName().equals(methodName) && !CollectionUtils.isEmpty(m.getParameters())) {
+							methodsByNameList = selectMethodBasedOnParamters(method, allMethods);
+						} else if (m.getSimpleName().equals(methodName)){
+							methodsByNameList = Arrays.asList(m);
+						}
+					}
 					collectHierarchy(ctModel, operation, method, methodsByNameList);
 					return;
 				} else if (!CollectionUtils.isEmpty(method.getParameters())) {
-					for (CtMethod<?> methodByName : methodsByNameList) {
-						List<CtParameter<?>> parameters = methodByName.getParameters();
-						if(!CollectionUtils.isEmpty(parameters) && parameters.size() == method.getParameters().size()) {
-							for(int i = 0; i < parameters.size(); i++) {
-								if(parameters.get(i).toString().equals(method.getParameters().get(i))) {
-									break;
-								}
-								methodsByNameList = Arrays.asList(methodByName);
-							}
-						}
-					}
+					methodsByNameList = selectMethodBasedOnParamters(method, methodsByNameList);
 				}
 				collectHierarchy(ctModel, operation, method, methodsByNameList);
 			});
@@ -85,33 +81,43 @@ public class MethodService {
 				String methodName = method.getSimpleName();
 				List<CtMethod<?>> methodsByNameList = aClass.getMethodsByName(methodName);
 				if (CollectionUtils.isEmpty(methodsByNameList)) {
-					methodsByNameList = aClass.getAllMethods().stream().filter(m -> {
-//						System.out.println(m.getSimpleName()); // TODO: for repo.save()
-						return m.getSimpleName().equals(methodName);
-					}).collect(Collectors.toList());
+					Set<CtMethod<?>> allMethods = aClass.getAllMethods();
+					for(CtMethod<?> m : allMethods) {
+						if (m.getSimpleName().equals(methodName) && !CollectionUtils.isEmpty(m.getParameters())) {
+							methodsByNameList = selectMethodBasedOnParamters(method, allMethods);
+						} else if (m.getSimpleName().equals(methodName)){
+							methodsByNameList = Arrays.asList(m);
+						}
+					}
 					collectHierarchy(ctModel, operation, method, methodsByNameList);
 					return;
 				} else if (!CollectionUtils.isEmpty(method.getParameters())) {
-					for (CtMethod<?> methodByName : methodsByNameList) {
-						List<CtParameter<?>> parameters = methodByName.getParameters();
-						if(!CollectionUtils.isEmpty(parameters) && parameters.size() == method.getParameters().size()) {
-							boolean paramMatches = true;
-							for(int i = 0; i < parameters.size(); i++) {
-								if(!(parameters.get(i).toString().equals(method.getParameters().get(i)) || 
-										parameters.get(i).getType().getSimpleName().equals(method.getParameters().get(i)))) {
-									paramMatches = false;
-									break;
-								}
-							}
-							if(paramMatches) {
-								methodsByNameList = Arrays.asList(methodByName);
-							}
-						}
-					}
+					methodsByNameList = selectMethodBasedOnParamters(method, methodsByNameList);
 				}
 				collectHierarchy(ctModel, operation, method, methodsByNameList);
 			});
 		});
+	}
+	
+	private static List<CtMethod<?>> selectMethodBasedOnParamters(MethodDto method,
+			Collection<? extends CtMethod<?>> methodsByNameList) {
+		List<CtMethod<?>> selectedMethod = new ArrayList<>();
+		for (CtMethod<?> methodByName : methodsByNameList) {
+			List<CtParameter<?>> parameters = methodByName.getParameters();
+			if(!CollectionUtils.isEmpty(parameters) && parameters.size() == method.getParameters().size()) {
+				boolean paramMatches = true;
+				for(int i = 0; i < parameters.size(); i++) {
+					if(parameters.get(i).toString().equals(method.getParameters().get(i))) {
+						paramMatches = false;
+						break;
+					}
+				}
+				if(paramMatches) {
+					selectedMethod = Arrays.asList(methodByName);
+				}
+			}
+		}
+		return selectedMethod;
 	}
 
 	private static void collectHierarchy(CtModel ctModel, DataOperation operation, MethodDto method,
@@ -169,16 +175,16 @@ public class MethodService {
 				System.out.println(String.format(tab + "Operation Name : [%s]", operation.getOperation()));
 				operation.getHierarchy().entrySet().forEach(entry -> {
 					if (CollectionUtils.isEmpty(entry.getValue())) {
-						System.out.println(String.format(tab + tab + "Hierarchy for [%s] param [%s] NOT FOUND.", entry.getKey().getSimpleName(), entry.getKey().getParameters()));
+						System.out.println(String.format(tab + tab + "Hierarchy for [%s] param %s NOT FOUND.", entry.getKey().getSimpleName(), entry.getKey().getParameters()));
 						System.out.println();
 						return;
 					}
-					if (entry.getValue().size() == 1) {
-						System.out.println(String.format(tab + tab + "Method [%s] param [%s] NOT INVOKED. ", entry.getKey().getSimpleName(), entry.getKey().getParameters()));
+					if (entry.getValue().get(0).size() == 1) {
+						System.out.println(String.format(tab + tab + "Method [%s] param %s NOT INVOKED. ", entry.getKey().getSimpleName(), entry.getKey().getParameters()));
 						System.out.println();
 						return;
 					}
-					System.out.println(String.format(tab + tab + "Hierarchy for [%s] param [%s]", entry.getKey().getSimpleName(), entry.getKey().getParameters()));
+					System.out.println(String.format(tab + tab + "Hierarchy for [%s] param %s", entry.getKey().getSimpleName(), entry.getKey().getParameters()));
 					int count = 1;
 					System.out.println(String.format(tab + tab + "Total call hierarchies found : [%d]", entry.getValue().size()));
 					for (List<Hierarchy> hierarchy : entry.getValue()) {
