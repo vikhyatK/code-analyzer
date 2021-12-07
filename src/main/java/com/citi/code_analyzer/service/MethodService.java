@@ -95,10 +95,15 @@ public class MethodService {
 					for (CtMethod<?> methodByName : methodsByNameList) {
 						List<CtParameter<?>> parameters = methodByName.getParameters();
 						if(!CollectionUtils.isEmpty(parameters) && parameters.size() == method.getParameters().size()) {
+							boolean paramMatches = true;
 							for(int i = 0; i < parameters.size(); i++) {
-								if(!parameters.get(i).toString().equals(method.getParameters().get(i))) {
+								if(!(parameters.get(i).toString().equals(method.getParameters().get(i)) || 
+										parameters.get(i).getType().getSimpleName().equals(method.getParameters().get(i)))) {
+									paramMatches = false;
 									break;
 								}
+							}
+							if(paramMatches) {
 								methodsByNameList = Arrays.asList(methodByName);
 							}
 						}
@@ -164,7 +169,12 @@ public class MethodService {
 				System.out.println(String.format(tab + "Operation Name : [%s]", operation.getOperation()));
 				operation.getHierarchy().entrySet().forEach(entry -> {
 					if (CollectionUtils.isEmpty(entry.getValue())) {
-						System.out.println(String.format(tab + tab + "Hierarchy for [%s] NOT FOUND.", entry.getKey().getSimpleName()));
+						System.out.println(String.format(tab + tab + "Hierarchy for [%s] param [%s] NOT FOUND.", entry.getKey().getSimpleName(), entry.getKey().getParameters()));
+						System.out.println();
+						return;
+					}
+					if (entry.getValue().size() == 1) {
+						System.out.println(String.format(tab + tab + "Method [%s] param [%s] NOT INVOKED. ", entry.getKey().getSimpleName(), entry.getKey().getParameters()));
 						System.out.println();
 						return;
 					}

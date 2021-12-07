@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 public class DataManipulator {
 
 	private String className;
+	private String tableName;
 	private List<DataOperation> operation = new ArrayList<>();
 
 	public DataManipulator(String className, List<DataOperation> operation) {
@@ -36,6 +37,14 @@ public class DataManipulator {
 
 	public void setOperation(List<DataOperation> operation) {
 		this.operation = operation;
+	}
+
+	public String getTableName() {
+		return tableName;
+	}
+
+	public void setTableName(String tableName) {
+		this.tableName = tableName;
 	}
 
 	public boolean isEmpty() {
