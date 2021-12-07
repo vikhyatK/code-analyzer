@@ -2,13 +2,14 @@ package com.citi.code_analyzer;
 
 import java.io.File;
 import java.util.List;
-import java.util.Map;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.OptionHandlerFilter;
 
+import com.citi.code_analyzer.model.DataManipulator;
+import com.citi.code_analyzer.service.DaoInvocationFinderService;
 import com.citi.code_analyzer.service.MethodService;
 
 import spoon.Launcher;
@@ -49,6 +50,8 @@ public class ShowMethodCallHierarchy {
     
     public void doMain() {
     	Launcher launcher = new Launcher();
+//    	sourceFolder = "F:\\Java_stuff\\Freelancing\\ApneSaathi\\ApneSaathiBackend\\developer-parvathy\\VolunteerApp\\src\\main\\java";
+//    	sourceFolder = "C:\\Users\\Vikhyat\\Documents\\workspace-spring-tool-suite-4-4.8.0.RELEASE\\Test\\src";
     	File file = new File(sourceFolder);
     	if(file.exists() && file.isDirectory()) {
     		launcher.addInputResource(sourceFolder);
@@ -61,7 +64,7 @@ public class ShowMethodCallHierarchy {
     }
 
 	private void parse(Launcher launcher) {
-    	Map<String, List<String>> classToMethodNameMap = MethodService.findMethodsManipulatingTable(tableName);
-    	MethodService.getHierarchy(launcher, classToMethodNameMap);
+		List<DataManipulator> dataManipulators = DaoInvocationFinderService.findMethodsManipulatingTable(tableName);
+    	MethodService.getHierarchy(launcher, dataManipulators);
 	}
 }
