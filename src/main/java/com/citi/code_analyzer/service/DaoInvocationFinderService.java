@@ -13,8 +13,8 @@ public class DaoInvocationFinderService {
 		DataOperation operation = new DataOperation();
 		operation.setOperation("Update");
 		operation.setMethods(Arrays.asList(
-//				new MethodDto("updateStatus", Arrays.asList("java.lang.String status", "java.lang.Integer id")),
-				new MethodDto("save", Arrays.asList("S"))/*,
+				new MethodDto("updateStatus", Arrays.asList("java.lang.String status", "java.lang.Integer id"))/*,
+				new MethodDto("save", Arrays.asList("S")),
 				new MethodDto("findByStatusAndStateAndDistrictIgnoreCase", null)*/));
 		DataManipulator dm = new DataManipulator();
 		dm.setClassName("com.kef.org.rest.repository.SeniorCitizenRepository");

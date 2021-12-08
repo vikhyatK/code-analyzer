@@ -5,10 +5,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.citi.code_analyzer.model.DataManipulator;
 import com.citi.code_analyzer.model.DataOperation;
@@ -18,6 +21,7 @@ import com.citi.code_analyzer.model.MethodDto;
 import spoon.Launcher;
 import spoon.reflect.CtModel;
 import spoon.reflect.code.CtInvocation;
+import spoon.reflect.declaration.CtAnnotation;
 import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtInterface;
 import spoon.reflect.declaration.CtMethod;
@@ -107,7 +111,8 @@ public class MethodService {
 			if(!CollectionUtils.isEmpty(parameters) && parameters.size() == method.getParameters().size()) {
 				boolean paramMatches = true;
 				for(int i = 0; i < parameters.size(); i++) {
-					if(parameters.get(i).toString().equals(method.getParameters().get(i))) {
+					if(!(parameters.get(i).toString().equals(method.getParameters().get(i)) ||
+							parameters.get(i).getType().getSimpleName().equals(method.getParameters().get(i)))) {
 						paramMatches = false;
 						break;
 					}
@@ -140,7 +145,7 @@ public class MethodService {
 			return toReturn;
 		}
 		visitedMethods.add(new Hierarchy(method.getReference().getDeclaringType().getQualifiedName() + "."
-				+ method.getReference().getSignature(), /*getMethodMapping(method.getReference().getActualMethod())*/ null));
+				+ method.getReference().getSignature(), null));
 		List<CtMethod<?>> callers = ctModel.getElements(new TypeFilter<CtInvocation<?>>(CtInvocation.class) {
 			@Override
 			public boolean matches(CtInvocation<?> element) {
@@ -210,35 +215,42 @@ public class MethodService {
 		});
 	}
 	
-//	private static List<String> getMethodMapping(final CtMethod<?> method) {
-//        final Optional<String> restControllerPath = getRestControllerPath(method.getgetDeclaringClass());
-//        final List<String> methodMappings = new LinkedList<>();
-//        final RequestMapping requestMapping = AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping.class);
-//        if (requestMapping != null && requestMapping.value() != null && requestMapping.value().length != 0) {
-//            final String requestType = getRequestType(requestMapping);
-//            Arrays.asList(requestMapping.value()).forEach(rm -> methodMappings.add(rm.concat(" ").concat(requestType)));
-//        }
-//
-//        return methodMappings
-//                .stream()
-//                .map(m -> restControllerPath.map(rcp -> rcp.concat(m)).orElse(m))
-//                .collect(Collectors.toList());
-//    }
-//
+	private static String getMethodMapping(final CtMethod<?> method) {
+		Optional<String> restControllerPath = Optional.empty();
+		String requestMapping = null;
+		for (CtAnnotation<?> annotation : method.getDeclaringType().getAnnotations()) {
+			if (annotation.getType().getSimpleName().equals("RestController")) {
+				if (!MapUtils.isEmpty(annotation.getAllValues())
+						&& Objects.nonNull(annotation.getAllValues().get("value"))
+						&& !StringUtils.isBlank(annotation.getAllValues().get("value").toString())) {
+					restControllerPath = Optional.of(annotation.getAllValues().get("value").toString());
+				}
+				for (CtAnnotation<?> methodAnnotations : method.getAnnotations()) {
+					if (methodAnnotations.getType().getSimpleName().equals("RequestMapping")
+							&& !MapUtils.isEmpty(annotation.getAllValues())
+							&& Objects.nonNull(annotation.getAllValues().get("value"))
+							&& !StringUtils.isBlank(annotation.getAllValues().get("value").toString())) {
+						requestMapping = annotation.getAllValues().get("value").toString();
+						if (Objects.nonNull(annotation.getAllValues().get("method"))
+								&& !StringUtils.isBlank(annotation.getAllValues().get("method").toString())) {
+							requestMapping = requestMapping
+									+ " [".concat(annotation.getAllValues().get("method").toString()).concat("]");
+						} else {
+							requestMapping = requestMapping + " [GET]";
+						}
+					}
+				}
+				requestMapping = restControllerPath.isPresent() ? restControllerPath.get().concat(requestMapping) : requestMapping;
+			}
+		}
+		return requestMapping;
+	}
+
 //    private static String getRequestType(final RequestMapping requestMapping) {
 //        return requestMapping.method() != null && requestMapping.method().length > 0 ?
 //                Arrays.stream(requestMapping.method())
 //                        .map(m -> "[".concat(m.name()).concat("]"))
 //                        .collect(Collectors.joining(" ")) :
 //                "[GET]";
-//    }
-//
-//    private static Optional<String> getRestControllerPath(final Class<?> declaringClass) {
-//        final RestController restController = AnnotationUtils.findAnnotation(declaringClass, RestController.class);
-//        Optional<String> restControllerPath = Optional.empty();
-//        if (restController != null && !StringUtils.isEmpty(restController.value())) {
-//            restControllerPath = Optional.of(restController.value());
-//        }
-//        return restControllerPath;
 //    }
 }
